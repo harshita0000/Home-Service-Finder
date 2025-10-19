@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Providers - Urban Services</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .provider-card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+            height: 100%;
+        }
+        .provider-card:hover {
+            transform: translateY(-3px);
+        }
+        .rating-stars {
+            color: #ffc107;
+        }
+        .price-badge {
+            background: linear-gradient(135deg, #28a745, #20c997);
+        }
+        .provider-avatar {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        .action-buttons {
+            gap: 0.5rem;
+        }
+        .chat-btn {
+            background: linear-gradient(135deg, #17a2b8, #138496);
+            border: none;
+            color: white;
+        }
+        .chat-btn:hover {
+            background: linear-gradient(135deg, #138496, #117a8b);
+            color: white;
+        }
+        .book-btn {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            border: none;
+            color: white;
+        }
+        .book-btn:hover {
+            background: linear-gradient(135deg, #20c997, #1dd1a1);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-tools me-2"></i>Urban Services
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/services">All Services</a>
+                <a class="nav-link" href="/dashboard">Dashboard</a>
+                <a class="nav-link" href="/logout">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Category Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/services">Services</a></li>
+                        <li class="breadcrumb-item active" th:text="${category?.name}">Category</li>
+                    </ol>
+                </nav>
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 th:text="${category?.name}">Service Category</h2>
+                        <p class="text-muted" th:text="${category?.description}">Category description</p>
+                    </div>
+                    <div class="badge bg-primary fs-6" th:text="${#lists.size(providers)} + ' Providers Available'">
+                        0 Providers Available
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter Options -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body py-3">
+                        <div class="row align-items-center">
+                            <div class="col-md-3">
+                                <select class="form-select" id="sortBy">
+                                    <option value="rating">Sort by Rating</option>
+                                    <option value="price">Sort by Price</option>
+                                    <option value="experience">Sort by Experience</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <select class="form-select" id="filterAvailability">
+                                    <option value="all">All Providers</option>
+                                    <option value="available">Available Now</option>
+                                    <option value="verified">Verified Only</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <input type="range" class="form-range" id="priceRange" min="20" max="100" value="100">
+                                <label class="form-label">Max Price: $<span id="maxPrice">100</span>/hr</label>
+                            </div>
+                            <div class="col-md-3">
+                                <button class="btn btn-outline-primary w-100" onclick="applyFilters()">
+                                    <i class="fas fa-filter me-2"></i>Apply Filters
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Providers List -->
+        <div class="row" id="providersContainer">
+            <div class="col-md-6 col-lg-4 mb-4" th:each="provider : ${providers}">
+                <div class="card provider-card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-start mb-3">
+                            <div class="provider-avatar me-3" th:data-initials="${provider.user.firstName.substring(0,1) + provider.user.lastName.substring(0,1)}">
+                                <span th:text="${provider.user.firstName.substring(0,1) + provider.user.lastName.substring(0,1)}">JD</span>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="card-title mb-1" th:text="${provider.user.firstName + ' ' + provider.user.lastName}">Provider Name</h6>
+                                <div class="d-flex align-items-center mb-1">
+                                    <span class="rating-stars me-2">
+                                        <th:block th:each="star : ${#numbers.sequence(1, 5)}">
+                                            <i th:class="${star <= (provider.rating ?: 0)} ? 'fas fa-star' : 'far fa-star'"></i>
+                                        </th:block>
+                                    </span>
+                                    <small class="text-muted" th:text="'(' + (provider.totalReviews ?: 0) + ' reviews)'">Reviews</small>
+                                </div>
+                                <small class="text-muted" th:text="${provider.experienceYears + ' years experience'}">Experience</small>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge price-badge text-white px-2 py-1">
+                                    $<span th:text="${provider.hourlyRate}">50</span>/hr
+                                </span>
+                            </div>
+                        </div>
+
+                        <p class="card-text text-muted small mb-3" th:text="${#strings.abbreviate(provider.bio, 80)}">Provider bio description...</p>
+
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <span class="badge bg-success me-2" th:if="${provider.available}">
+                                    <i class="fas fa-circle me-1" style="font-size: 0.6rem;"></i>Available
+                                </span>
+                                <span class="badge bg-secondary me-2" th:unless="${provider.available}">
+                                    <i class="fas fa-clock me-1"></i>Busy
+                                </span>
+                                <span class="badge bg-primary" th:if="${provider.verified}">
+                                    <i class="fas fa-check-circle me-1"></i>Verified
+                                </span>
+                            </div>
+                            <small class="text-muted">
+                                <i class="fas fa-map-marker-alt me-1"></i>
+                                <span th:text="${provider.user.address?.split(',')[1] ?: 'Local Area'}">Local Area</span>
+                            </small>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-grid gap-2 action-buttons">
+                            <div class="row">
+                                <div class="col-6">
+                                    <button class="btn chat-btn w-100"
+                                            th:data-provider-id="${provider.id}"
+                                            th:data-provider-name="${provider.user.firstName + ' ' + provider.user.lastName}"
+                                            onclick="startChatFromButton(this)">
+                                        <i class="fas fa-comments me-2"></i>Chat
+                                    </button>
+                                </div>
+                                <div class="col-6">
+                                    <button class="btn book-btn w-100"
+                                            th:data-provider-id="${provider.id}"
+                                            onclick="showBookingModalFromButton(this)"
+                                            th:disabled="${!provider.available}">
+                                        <i class="fas fa-calendar-plus me-2"></i>Book Now
+                                    </button>
+                                </div>
+                            </div>
+                            <a th:href="@{/provider/{id}(id=${provider.id})}"
+                               class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-eye me-1"></i>View Full Profile
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- No Providers Found -->
+        <div th:if="${#lists.isEmpty(providers)}" class="row">
+            <div class="col-12 text-center py-5">
+                <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                <h4>No Service Providers Found</h4>
+                <p class="text-muted">No providers are currently available in this category.</p>
+                <a href="/services" class="btn btn-primary">Browse Other Categories</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Booking Modal -->
+    <div class="modal fade" id="bookingModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-calendar-plus me-2"></i>Book Service
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="providerInfo" class="mb-4">
+                        <!-- Provider info will be loaded here -->
+                    </div>
+
+                    <form id="quickBookingForm">
+                        <input type="hidden" id="selectedProviderId">
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="serviceDate" class="form-label">
+                                    <i class="fas fa-calendar me-1"></i>Service Date
+                                </label>
+                                <input type="date" class="form-control" id="serviceDate" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="timeSlot" class="form-label">
+                                    <i class="fas fa-clock me-1"></i>Time Slot
+                                </label>
+                                <select class="form-select" id="timeSlot" required>
+                                    <option value="">Select time slot</option>
+                                    <option value="09:00">9:00 AM - 10:00 AM</option>
+                                    <option value="10:00">10:00 AM - 11:00 AM</option>
+                                    <option value="11:00">11:00 AM - 12:00 PM</option>
+                                    <option value="12:00">12:00 PM - 1:00 PM</option>
+                                    <option value="13:00">1:00 PM - 2:00 PM</option>
+                                    <option value="14:00">2:00 PM - 3:00 PM</option>
+                                    <option value="15:00">3:00 PM - 4:00 PM</option>
+                                    <option value="16:00">4:00 PM - 5:00 PM</option>
+                                    <option value="17:00">5:00 PM - 6:00 PM</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="serviceDuration" class="form-label">
+                                <i class="fas fa-hourglass-half me-1"></i>Duration
+                            </label>
+                            <select class="form-select" id="serviceDuration" required>
+                                <option value="">Select duration</option>
+                                <option value="1">1 hour</option>
+                                <option value="2">2 hours</option>
+                                <option value="3">3 hours</option>
+                                <option value="4">4 hours</option>
+                                <option value="6">6 hours</option>
+                                <option value="8">8 hours (Full day)</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="serviceAddress" class="form-label">
+                                <i class="fas fa-map-marker-alt me-1"></i>Service Address
+                            </label>
+                            <textarea class="form-control" id="serviceAddress" rows="2"
+                                     placeholder="Enter the address where service is needed" required></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="serviceDescription" class="form-label">
+                                <i class="fas fa-file-alt me-1"></i>Service Description
+                            </label>
+                            <textarea class="form-control" id="serviceDescription" rows="3"
+                                     placeholder="Describe what you need help with..." required></textarea>
+                        </div>
+
+                        <!-- Cost Estimation -->
+                        <div class="card bg-light mb-3">
+                            <div class="card-body">
+                                <h6><i class="fas fa-calculator me-2"></i>Cost Estimate</h6>
+                                <div class="d-flex justify-content-between">
+                                    <span>Hourly Rate:</span>
+                                    <span>$<span id="modalHourlyRate">0</span>/hr</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span>Duration:</span>
+                                    <span id="modalDuration">-</span>
+                                </div>
+                                <hr>
+                                <div class="d-flex justify-content-between fw-bold">
+                                    <span>Total Estimate:</span>
+                                    <span id="modalTotalCost">$0</span>
+                                </div>
+                                <small class="text-muted">*Final amount may vary based on actual service provided</small>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="confirmBooking()">
+                        <i class="fas fa-check me-2"></i>Confirm Booking
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat Modal -->
+    <div class="modal fade" id="chatModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-comments me-2"></i>Chat with <span id="chatProviderName">Provider</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="chatMessages" style="height: 300px; overflow-y: auto; border: 1px solid #dee2e6; padding: 10px; margin-bottom: 10px;">
+                        <div class="text-center text-muted">
+                            <p>Start a conversation with your service provider!</p>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="chatMessage" placeholder="Type your message...">
+                        <button class="btn btn-primary" onclick="sendMessage()">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-success" onclick="proceedToBooking()">
+                        <i class="fas fa-calendar-plus me-2"></i>Book Service
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let currentProvider = null;
+        let chatProviderId = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set minimum date to today
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('serviceDate').setAttribute('min', today);
+
+            // Price range slider
+            const priceRange = document.getElementById('priceRange');
+            const maxPrice = document.getElementById('maxPrice');
+            priceRange.addEventListener('input', function() {
+                maxPrice.textContent = this.value;
+            });
+
+            // Duration change handler
+            document.getElementById('serviceDuration').addEventListener('change', updateCostEstimate);
+        });
+
+        function showBookingModal(providerId) {
+            // Fetch real provider data from the API
+            fetch(`/api/providers/${providerId}`)
+                .then(response => response.json())
+                .then(provider => {
+                    if (provider.error) {
+                        alert('Error loading provider details: ' + provider.error);
+                        return;
+                    }
+
+                    currentProvider = {
+                        id: provider.id,
+                        name: provider.user.firstName + ' ' + provider.user.lastName,
+                        initials: provider.user.firstName.substring(0,1) + provider.user.lastName.substring(0,1),
+                        category: provider.category.name,
+                        hourlyRate: provider.hourlyRate
+                    };
+
+                    document.getElementById('selectedProviderId').value = providerId;
+                    document.getElementById('modalHourlyRate').textContent = currentProvider.hourlyRate;
+
+                    // Show provider info
+                    document.getElementById('providerInfo').innerHTML = `
+                        <div class="d-flex align-items-center p-3 bg-light rounded">
+                            <div class="provider-avatar me-3">
+                                <span>${currentProvider.initials}</span>
+                            </div>
+                            <div>
+                                <h6 class="mb-1">${currentProvider.name}</h6>
+                                <small class="text-muted">${currentProvider.category} • $${currentProvider.hourlyRate}/hr</small>
+                            </div>
+                            ${provider.verified ? '<span class="badge bg-primary ms-auto"><i class="fas fa-check-circle me-1"></i>Verified</span>' : ''}
+                        </div>
+                    `;
+
+                    new bootstrap.Modal(document.getElementById('bookingModal')).show();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error loading provider details. Please try again.');
+                });
+        }
+
+        function startChat(providerId, providerName) {
+            chatProviderId = providerId;
+            document.getElementById('chatProviderName').textContent = providerName;
+
+            // Clear previous messages
+            document.getElementById('chatMessages').innerHTML = `
+                <div class="text-center text-muted">
+                    <p>Chat with ${providerName}</p>
+                    <small>Ask questions about the service before booking!</small>
+                </div>
+            `;
+
+            new bootstrap.Modal(document.getElementById('chatModal')).show();
+        }
+
+        function sendMessage() {
+            const messageInput = document.getElementById('chatMessage');
+            const message = messageInput.value.trim();
+
+            if (message) {
+                const chatMessages = document.getElementById('chatMessages');
+
+                // Add user message
+                chatMessages.innerHTML += `
+                    <div class="mb-2 text-end">
+                        <div class="d-inline-block bg-primary text-white rounded px-3 py-2">
+                            ${message}
+                        </div>
+                        <small class="text-muted d-block">Just now</small>
+                    </div>
+                `;
+
+                // Simulate provider response (in real app, this would be real-time)
+                setTimeout(() => {
+                    const responses = [
+                        "Hello! I'd be happy to help you with your service needs.",
+                        "Thank you for reaching out. What specific service are you looking for?",
+                        "I'm available and ready to assist you. When would you like to schedule?",
+                        "Great question! I have experience with that type of work.",
+                        "I can definitely help with that. Would you like to book a service?"
+                    ];
+                    const response = responses[Math.floor(Math.random() * responses.length)];
+
+                    chatMessages.innerHTML += `
+                        <div class="mb-2">
+                            <div class="d-inline-block bg-light rounded px-3 py-2">
+                                ${response}
+                            </div>
+                            <small class="text-muted d-block">Just now</small>
+                        </div>
+                    `;
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                }, 1000);
+
+                messageInput.value = '';
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+        }
+
+        function proceedToBooking() {
+            bootstrap.Modal.getInstance(document.getElementById('chatModal')).hide();
+            setTimeout(() => {
+                showBookingModal(chatProviderId);
+            }, 300);
+        }
+
+        function updateCostEstimate() {
+            const duration = document.getElementById('serviceDuration').value;
+            const hourlyRate = parseFloat(document.getElementById('modalHourlyRate').textContent);
+
+            if (duration && hourlyRate) {
+                const total = duration * hourlyRate;
+                document.getElementById('modalDuration').textContent = `${duration} hour${duration > 1 ? 's' : ''}`;
+                document.getElementById('modalTotalCost').textContent = `$${total.toFixed(2)}`;
+            }
+        }
+
+        function confirmBooking() {
+            const form = document.getElementById('quickBookingForm');
+            const formData = new FormData(form);
+
+            const bookingData = {
+                provider: { id: document.getElementById('selectedProviderId').value },
+                startTime: document.getElementById('serviceDate').value + 'T' + document.getElementById('timeSlot').value + ':00',
+                endTime: calculateEndTime(),
+                address: document.getElementById('serviceAddress').value,
+                description: document.getElementById('serviceDescription').value,
+                totalAmount: parseFloat(document.getElementById('modalTotalCost').textContent.replace('$', ''))
+            };
+
+            fetch('/api/bookings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(bookingData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.id) {
+                    bootstrap.Modal.getInstance(document.getElementById('bookingModal')).hide();
+                    alert('Booking confirmed! You will receive a confirmation email shortly.');
+                    // Redirect to bookings page
+                    window.location.href = '/my-bookings';
+                } else {
+                    alert('Error creating booking: ' + (data.error || 'Please try again.'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error creating booking. Please try again.');
+            });
+        }
+
+        function calculateEndTime() {
+            const date = document.getElementById('serviceDate').value;
+            const startTime = document.getElementById('timeSlot').value;
+            const duration = parseInt(document.getElementById('serviceDuration').value);
+
+            const start = new Date(`${date}T${startTime}:00`);
+            const end = new Date(start.getTime() + (duration * 60 * 60 * 1000));
+
+            return end.toISOString();
+        }
+
+        function findProviderById(id) {
+            // Return currentProvider if available, otherwise return mock data
+            return currentProvider || {
+                id: id,
+                name: "Provider Name",
+                initials: "PN",
+                category: "Service Category",
+                hourlyRate: 50
+            };
+        }
+
+        function applyFilters() {
+            // Implement filtering logic here
+            console.log('Applying filters...');
+        }
+
+        // Handle Enter key in chat
+        document.getElementById('chatMessage').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Handle chat button click from provider card
+        function startChatFromButton(button) {
+            const providerId = button.getAttribute('data-provider-id');
+            const providerName = button.getAttribute('data-provider-name');
+            startChat(providerId, providerName);
+        }
+
+        // Handle book now button click from provider card
+        function showBookingModalFromButton(button) {
+            const providerId = button.getAttribute('data-provider-id');
+            showBookingModal(providerId);
+        }
+    </script>
+</body>
+</html>

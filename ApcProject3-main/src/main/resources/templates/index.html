@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Urban Services - On-Demand Service Provider Marketplace</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .hero-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 100px 0;
+        }
+        .service-card {
+            transition: transform 0.3s;
+            border: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .service-card:hover {
+            transform: translateY(-5px);
+        }
+        .provider-card {
+            border: none;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+        .provider-card:hover {
+            transform: translateY(-3px);
+        }
+        .rating-stars {
+            color: #ffc107;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/"><i class="fas fa-tools"></i> Urban Services</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/services">Services</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#how-it-works">How It Works</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="loginDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-sign-in-alt me-1"></i>Login
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/simple-login">
+                                <i class="fas fa-user me-2"></i>Quick Login
+                            </a></li>
+                            <li><a class="dropdown-item" href="/login">
+                                <i class="fas fa-code me-2"></i>Advanced Login (API & Social)
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-muted small" href="#">
+                                <i class="fas fa-info-circle me-2"></i>Choose your preferred method
+                            </a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/register">Register</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section text-center">
+        <div class="container">
+            <h1 class="display-4 mb-4">Find Local Service Providers</h1>
+            <p class="lead mb-4">Connect with skilled professionals for home repairs, cleaning, gardening, and more</p>
+            <a href="/services" class="btn btn-light btn-lg me-3">Browse Services</a>
+            <a href="/register" class="btn btn-outline-light btn-lg">Join as Provider</a>
+        </div>
+    </section>
+
+    <!-- Service Categories -->
+    <section class="py-5">
+        <div class="container">
+            <h2 class="text-center mb-5">Popular Service Categories</h2>
+            <div class="row" th:if="${categories}">
+                <div class="col-md-4 mb-4" th:each="category : ${categories}">
+                    <div class="card service-card h-100">
+                        <div class="card-body text-center">
+                            <i class="fas fa-wrench fa-3x text-primary mb-3" th:if="${category.icon == null}"></i>
+                            <i th:class="${category.icon + ' fa-3x text-primary mb-3'}" th:if="${category.icon != null}"></i>
+                            <h5 class="card-title" th:text="${category.name}">Service Name</h5>
+                            <p class="card-text" th:text="${category.description}">Service description</p>
+                            <a th:href="@{/services/category/{id}(id=${category.id})}" class="btn btn-primary">
+                                View Providers
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Top Providers -->
+    <section class="bg-light py-5">
+        <div class="container">
+            <h2 class="text-center mb-5">Top Rated Providers</h2>
+            <div class="row" th:if="${topProviders}">
+                <div class="col-md-4 mb-4" th:each="provider : ${topProviders}">
+                    <div class="card provider-card h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-3">
+                                <img src="https://via.placeholder.com/60x60" class="rounded-circle me-3" alt="Provider">
+                                <div>
+                                    <h6 class="mb-1" th:text="${provider.user.firstName + ' ' + provider.user.lastName}">Provider Name</h6>
+                                    <small class="text-muted" th:text="${provider.category.name}">Category</small>
+                                </div>
+                            </div>
+                            <p class="card-text" th:text="${provider.bio}">Provider bio...</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="rating-stars">
+                                    <span th:text="${provider.rating}">4.8</span>
+                                    <i class="fas fa-star"></i>
+                                    <small class="text-muted" th:text="'(' + ${provider.totalReviews} + ' reviews)'">
+                                        (25 reviews)
+                                    </small>
+                                </div>
+                                <span class="text-primary fw-bold" th:text="'$' + ${provider.hourlyRate} + '/hr'">
+                                    $50/hr
+                                </span>
+                            </div>
+                            <a th:href="@{/provider/{id}(id=${provider.id})}" class="btn btn-outline-primary btn-sm mt-3">
+                                View Profile
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section id="how-it-works" class="py-5">
+        <div class="container">
+            <h2 class="text-center mb-5">How It Works</h2>
+            <div class="row">
+                <div class="col-md-4 text-center mb-4">
+                    <div class="bg-primary rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center"
+                         style="width: 80px; height: 80px;">
+                        <i class="fas fa-search fa-2x text-white"></i>
+                    </div>
+                    <h5>1. Browse Services</h5>
+                    <p>Choose from various service categories and browse available providers in your area.</p>
+                </div>
+                <div class="col-md-4 text-center mb-4">
+                    <div class="bg-primary rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center"
+                         style="width: 80px; height: 80px;">
+                        <i class="fas fa-calendar fa-2x text-white"></i>
+                    </div>
+                    <h5>2. Book Appointment</h5>
+                    <p>Select your preferred provider and book an appointment at your convenient time slot.</p>
+                </div>
+                <div class="col-md-4 text-center mb-4">
+                    <div class="bg-primary rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center"
+                         style="width: 80px; height: 80px;">
+                        <i class="fas fa-check fa-2x text-white"></i>
+                    </div>
+                    <h5>3. Get Service</h5>
+                    <p>Enjoy quality service from verified professionals and rate your experience.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5><i class="fas fa-tools"></i> Urban Services</h5>
+                    <p>Your trusted on-demand service provider marketplace.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p>&copy; 2024 Urban Services. Built with Spring Boot & Advanced Programming Concepts.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

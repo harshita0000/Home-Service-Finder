@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Bookings - Urban Services</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .booking-card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 1.5rem;
+        }
+        .status-pending { border-left: 5px solid #ffc107; }
+        .status-confirmed { border-left: 5px solid #28a745; }
+        .status-in-progress { border-left: 5px solid #17a2b8; }
+        .status-completed { border-left: 5px solid #6f42c1; }
+        .status-cancelled { border-left: 5px solid #dc3545; }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-tools me-2"></i>Urban Services
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/services">Browse Services</a>
+                <a class="nav-link active" href="/my-bookings">My Bookings</a>
+                <a class="nav-link" href="/dashboard">Dashboard</a>
+                <a class="nav-link" href="/logout">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2><i class="fas fa-calendar-alt me-2"></i>My Bookings</h2>
+                    <a href="/services" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>New Booking
+                    </a>
+                </div>
+
+                <!-- Filter Tabs -->
+                <ul class="nav nav-tabs mb-4" id="bookingTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all" type="button">
+                            All Bookings
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="upcoming-tab" data-bs-toggle="tab" data-bs-target="#upcoming" type="button">
+                            Upcoming
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="completed-tab" data-bs-toggle="tab" data-bs-target="#completed" type="button">
+                            Completed
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="bookingTabContent">
+                    <!-- All Bookings Tab -->
+                    <div class="tab-pane fade show active" id="all" role="tabpanel">
+                        <div id="allBookings">
+                            <!-- Bookings will be loaded here via JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- Upcoming Bookings Tab -->
+                    <div class="tab-pane fade" id="upcoming" role="tabpanel">
+                        <div id="upcomingBookings">
+                            <!-- Upcoming bookings will be loaded here -->
+                        </div>
+                    </div>
+
+                    <!-- Completed Bookings Tab -->
+                    <div class="tab-pane fade" id="completed" role="tabpanel">
+                        <div id="completedBookings">
+                            <!-- Completed bookings will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- No Bookings State -->
+                <div id="noBookings" class="text-center py-5" style="display: none;">
+                    <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                    <h4>No Bookings Found</h4>
+                    <p class="text-muted">You haven't made any bookings yet. Browse our services to get started!</p>
+                    <a href="/services" class="btn btn-primary">Browse Services</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Booking Detail Modal -->
+    <div class="modal fade" id="bookingModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-info-circle me-2"></i>Booking Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="bookingDetails">
+                    <!-- Booking details will be loaded here -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-warning" id="cancelBookingBtn" style="display: none;">
+                        Cancel Booking
+                    </button>
+                    <button type="button" class="btn btn-primary" id="reviewBookingBtn" style="display: none;">
+                        Write Review
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Review Modal -->
+    <div class="modal fade" id="reviewModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-star me-2"></i>Write Review</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="reviewForm">
+                        <input type="hidden" id="reviewBookingId">
+                        <div class="mb-3">
+                            <label class="form-label">Rating</label>
+                            <div class="rating-input">
+                                <i class="far fa-star rating-star" data-rating="1"></i>
+                                <i class="far fa-star rating-star" data-rating="2"></i>
+                                <i class="far fa-star rating-star" data-rating="3"></i>
+                                <i class="far fa-star rating-star" data-rating="4"></i>
+                                <i class="far fa-star rating-star" data-rating="5"></i>
+                            </div>
+                            <input type="hidden" id="rating" name="rating" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="reviewText" class="form-label">Review</label>
+                            <textarea class="form-control" id="reviewText" name="reviewText" rows="4"
+                                     placeholder="Share your experience with this service..." required></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="submitReview">Submit Review</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            loadBookings('all');
+
+            // Tab switching
+            document.querySelectorAll('#bookingTabs button').forEach(tab => {
+                tab.addEventListener('shown.bs.tab', function(e) {
+                    const targetId = e.target.getAttribute('data-bs-target').substring(1);
+                    loadBookings(targetId);
+                });
+            });
+
+            // Rating stars interaction
+            document.querySelectorAll('.rating-star').forEach(star => {
+                star.addEventListener('click', function() {
+                    const rating = this.getAttribute('data-rating');
+                    document.getElementById('rating').value = rating;
+
+                    document.querySelectorAll('.rating-star').forEach((s, index) => {
+                        if (index < rating) {
+                            s.classList.remove('far');
+                            s.classList.add('fas');
+                        } else {
+                            s.classList.remove('fas');
+                            s.classList.add('far');
+                        }
+                    });
+                });
+            });
+
+            // Submit review
+            document.getElementById('submitReview').addEventListener('click', function() {
+                const form = document.getElementById('reviewForm');
+                const formData = new FormData(form);
+                const reviewData = {
+                    bookingId: document.getElementById('reviewBookingId').value,
+                    rating: formData.get('rating'),
+                    reviewText: formData.get('reviewText')
+                };
+
+                fetch('/api/reviews', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(reviewData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.id) {
+                        bootstrap.Modal.getInstance(document.getElementById('reviewModal')).hide();
+                        alert('Review submitted successfully!');
+                        loadBookings('all');
+                    } else {
+                        alert('Error submitting review: ' + (data.error || 'Unknown error'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error submitting review. Please try again.');
+                });
+            });
+        });
+
+        function loadBookings(filter) {
+            let url = '/api/bookings/my';
+            if (filter === 'upcoming') {
+                url += '?status=PENDING,CONFIRMED,IN_PROGRESS';
+            } else if (filter === 'completed') {
+                url += '?status=COMPLETED';
+            }
+
+            fetch(url)
+                .then(response => response.json())
+                .then(bookings => {
+                    const container = document.getElementById(filter + 'Bookings');
+                    if (bookings.length === 0) {
+                        container.innerHTML = '<div class="text-center py-4"><p class="text-muted">No bookings found.</p></div>';
+                        return;
+                    }
+
+                    container.innerHTML = bookings.map(booking => createBookingCard(booking)).join('');
+                })
+                .catch(error => {
+                    console.error('Error loading bookings:', error);
+                    document.getElementById('noBookings').style.display = 'block';
+                });
+        }
+
+        function createBookingCard(booking) {
+            const statusClass = `status-${booking.status.toLowerCase().replace('_', '-')}`;
+            const statusBadge = getStatusBadge(booking.status);
+            const date = new Date(booking.startTime).toLocaleDateString();
+            const time = new Date(booking.startTime).toLocaleTimeString();
+
+            return `
+                <div class="card booking-card ${statusClass}">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <h6 class="card-title mb-2">${booking.provider.category.name}</h6>
+                                <p class="text-muted mb-1">
+                                    <i class="fas fa-user me-1"></i>
+                                    ${booking.provider.user.firstName} ${booking.provider.user.lastName}
+                                </p>
+                                <p class="text-muted mb-1">
+                                    <i class="fas fa-calendar me-1"></i> ${date} at ${time}
+                                </p>
+                                <p class="text-muted mb-0">
+                                    <i class="fas fa-dollar-sign me-1"></i> $${booking.totalAmount}
+                                </p>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                ${statusBadge}
+                                <div class="mt-2">
+                                    <button class="btn btn-sm btn-outline-primary" onclick="showBookingDetails(${booking.id})">
+                                        View Details
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function getStatusBadge(status) {
+            const badges = {
+                'PENDING': '<span class="badge bg-warning">Pending</span>',
+                'CONFIRMED': '<span class="badge bg-success">Confirmed</span>',
+                'IN_PROGRESS': '<span class="badge bg-info">In Progress</span>',
+                'COMPLETED': '<span class="badge bg-primary">Completed</span>',
+                'CANCELLED': '<span class="badge bg-danger">Cancelled</span>'
+            };
+            return badges[status] || '<span class="badge bg-secondary">Unknown</span>';
+        }
+
+        function showBookingDetails(bookingId) {
+            fetch(`/api/bookings/${bookingId}`)
+                .then(response => response.json())
+                .then(booking => {
+                    const detailsHtml = `
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Service Details</h6>
+                                <p><strong>Category:</strong> ${booking.provider.category.name}</p>
+                                <p><strong>Provider:</strong> ${booking.provider.user.firstName} ${booking.provider.user.lastName}</p>
+                                <p><strong>Date & Time:</strong> ${new Date(booking.startTime).toLocaleString()}</p>
+                                <p><strong>Duration:</strong> ${calculateDuration(booking.startTime, booking.endTime)}</p>
+                                <p><strong>Status:</strong> ${getStatusBadge(booking.status)}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Booking Information</h6>
+                                <p><strong>Address:</strong> ${booking.address}</p>
+                                <p><strong>Total Amount:</strong> $${booking.totalAmount}</p>
+                                <p><strong>Booking ID:</strong> #${booking.id}</p>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <h6>Description</h6>
+                                <p>${booking.description}</p>
+                                ${booking.notes ? `<h6>Notes</h6><p>${booking.notes}</p>` : ''}
+                            </div>
+                        </div>
+                    `;
+                    document.getElementById('bookingDetails').innerHTML = detailsHtml;
+
+                    // Show appropriate action buttons
+                    const cancelBtn = document.getElementById('cancelBookingBtn');
+                    const reviewBtn = document.getElementById('reviewBookingBtn');
+
+                    if (booking.status === 'PENDING' || booking.status === 'CONFIRMED') {
+                        cancelBtn.style.display = 'inline-block';
+                        cancelBtn.onclick = () => cancelBooking(booking.id);
+                    } else {
+                        cancelBtn.style.display = 'none';
+                    }
+
+                    if (booking.status === 'COMPLETED') {
+                        reviewBtn.style.display = 'inline-block';
+                        reviewBtn.onclick = () => showReviewModal(booking.id);
+                    } else {
+                        reviewBtn.style.display = 'none';
+                    }
+
+                    new bootstrap.Modal(document.getElementById('bookingModal')).show();
+                })
+                .catch(error => {
+                    console.error('Error loading booking details:', error);
+                    alert('Error loading booking details.');
+                });
+        }
+
+        function calculateDuration(start, end) {
+            const startTime = new Date(start);
+            const endTime = new Date(end);
+            const hours = Math.abs(endTime - startTime) / 36e5;
+            return `${hours} hour${hours > 1 ? 's' : ''}`;
+        }
+
+        function cancelBooking(bookingId) {
+            if (confirm('Are you sure you want to cancel this booking?')) {
+                fetch(`/api/bookings/${bookingId}/cancel`, { method: 'PUT' })
+                    .then(response => response.json())
+                    .then(data => {
+                        alert('Booking cancelled successfully.');
+                        bootstrap.Modal.getInstance(document.getElementById('bookingModal')).hide();
+                        loadBookings('all');
+                    })
+                    .catch(error => {
+                        console.error('Error cancelling booking:', error);
+                        alert('Error cancelling booking.');
+                    });
+            }
+        }
+
+        function showReviewModal(bookingId) {
+            document.getElementById('reviewBookingId').value = bookingId;
+            bootstrap.Modal.getInstance(document.getElementById('bookingModal')).hide();
+            new bootstrap.Modal(document.getElementById('reviewModal')).show();
+        }
+    </script>
+
+    <style>
+        .rating-input .rating-star {
+            font-size: 1.5rem;
+            color: #ffc107;
+            cursor: pointer;
+            margin: 0 0.1rem;
+        }
+
+        .rating-input .rating-star:hover {
+            color: #ffcd39;
+        }
+    </style>
+</body>
+</html>
